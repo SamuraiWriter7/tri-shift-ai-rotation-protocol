@@ -1,0 +1,547 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/rotation-evaluation-record.schema.json",
+  "title": "Rotation Evaluation Record",
+  "description": "Records one auditable adaptive-rotation evaluation and its resulting action.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "evaluation_id",
+    "policy_id",
+    "system_id",
+    "rotation_cycle_id",
+    "active_unit",
+    "candidate_units",
+    "evaluation_window",
+    "signal_observations",
+    "score",
+    "guard_evaluation",
+    "decision",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.3.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "rotation_evaluation_record"
+    },
+    "evaluation_id": {
+      "$ref": "#/$defs/id"
+    },
+    "policy_id": {
+      "$ref": "#/$defs/id"
+    },
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "rotation_cycle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "active_unit": {
+      "$ref": "#/$defs/active_unit"
+    },
+    "candidate_units": {
+      "$ref": "#/$defs/candidate_units"
+    },
+    "evaluation_window": {
+      "$ref": "#/$defs/evaluation_window"
+    },
+    "signal_observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/signal_observation"
+      }
+    },
+    "score": {
+      "$ref": "#/$defs/score"
+    },
+    "guard_evaluation": {
+      "$ref": "#/$defs/guard_evaluation"
+    },
+    "decision": {
+      "$ref": "#/$defs/decision"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "active_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "current_state",
+        "current_authority",
+        "active_duration_seconds",
+        "consecutive_active_shifts",
+        "active_share_in_window"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "current_state": {
+          "type": "string",
+          "const": "ACTIVE"
+        },
+        "current_authority": {
+          "type": "string",
+          "const": "PRIMARY"
+        },
+        "active_duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "consecutive_active_shifts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "active_share_in_window": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "state_record_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "candidate_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "current_state",
+        "target_state",
+        "readiness_score"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "current_state": {
+          "type": "string",
+          "enum": [
+            "SHADOW",
+            "REGENERATION"
+          ]
+        },
+        "target_state": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "SHADOW"
+          ]
+        },
+        "readiness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "blocking_reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "state_record_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "candidate_units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assuming_candidate",
+        "continuity_candidate"
+      ],
+      "properties": {
+        "assuming_candidate": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/candidate_unit"
+            },
+            {
+              "properties": {
+                "current_state": {
+                  "const": "SHADOW"
+                },
+                "target_state": {
+                  "const": "ACTIVE"
+                }
+              }
+            }
+          ]
+        },
+        "continuity_candidate": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/candidate_unit"
+            },
+            {
+              "properties": {
+                "current_state": {
+                  "const": "REGENERATION"
+                },
+                "target_state": {
+                  "const": "SHADOW"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "evaluation_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "started_at",
+        "ended_at",
+        "sample_count"
+      ],
+      "properties": {
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sample_count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "signal_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signal_id",
+        "raw_value",
+        "normalized_value",
+        "direction",
+        "weight_used",
+        "warning_threshold_used",
+        "critical_threshold_used",
+        "threshold_state",
+        "contribution"
+      ],
+      "properties": {
+        "signal_id": {
+          "$ref": "#/$defs/id"
+        },
+        "raw_value": {
+          "type": "number"
+        },
+        "normalized_value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "HIGHER_IS_WORSE",
+            "LOWER_IS_WORSE"
+          ]
+        },
+        "weight_used": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "warning_threshold_used": {
+          "type": "number"
+        },
+        "critical_threshold_used": {
+          "type": "number"
+        },
+        "threshold_state": {
+          "type": "string",
+          "enum": [
+            "NORMAL",
+            "WARNING",
+            "CRITICAL",
+            "MISSING"
+          ]
+        },
+        "contribution": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "total_score",
+        "warning_score",
+        "rotation_score",
+        "consecutive_threshold_breaches",
+        "required_consecutive_breaches",
+        "hard_triggered",
+        "hard_trigger_ids"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "WEIGHTED_SUM"
+        },
+        "total_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "warning_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rotation_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "consecutive_threshold_breaches": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "required_consecutive_breaches": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hard_triggered": {
+          "type": "boolean"
+        },
+        "hard_trigger_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "guard_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_active_duration_seconds",
+        "maximum_active_duration_seconds",
+        "active_duration_satisfied",
+        "maximum_duration_reached",
+        "minimum_shadow_readiness_score",
+        "shadow_readiness_satisfied",
+        "minimum_regeneration_completion_score",
+        "regeneration_completion_satisfied",
+        "cooldown_seconds",
+        "cooldown_elapsed_seconds",
+        "cooldown_satisfied",
+        "handoff_blockers",
+        "emergency_override",
+        "all_required_guards_passed"
+      ],
+      "properties": {
+        "minimum_active_duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum_active_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "active_duration_satisfied": {
+          "type": "boolean"
+        },
+        "maximum_duration_reached": {
+          "type": "boolean"
+        },
+        "minimum_shadow_readiness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "shadow_readiness_satisfied": {
+          "type": "boolean"
+        },
+        "minimum_regeneration_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "regeneration_completion_satisfied": {
+          "type": "boolean"
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_elapsed_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cooldown_satisfied": {
+          "type": "boolean"
+        },
+        "handoff_blockers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "emergency_override": {
+          "type": "boolean"
+        },
+        "all_required_guards_passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "reason_codes",
+        "selected_assuming_unit_id",
+        "selected_continuity_unit_id",
+        "planned_handoff_id",
+        "execute_not_before",
+        "decision_authority"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "HOLD",
+            "ROTATE_NOW",
+            "ROTATE_AT",
+            "EMERGENCY_REASSIGN",
+            "ABORT_ACTIVE_WORK"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "selected_assuming_unit_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "selected_continuity_unit_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "planned_handoff_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "execute_not_before": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "decision_authority": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status",
+        "previous_evaluation_ref",
+        "checksum"
+      ],
+      "properties": {
+        "recorded_by": {
+          "$ref": "#/$defs/id"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "previous_evaluation_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
