@@ -55,6 +55,21 @@ VALIDATION_TARGETS = [
     ),
     "semantic_validator": "validate_multi_wing_matrix_semantics",
 },
+   {
+    "name": "Continuous Operation Receipt",
+    "schema": (
+        ROOT_DIR
+        / "schemas"
+        / "continuous-operation-receipt.schema.json"
+    ),
+    "example": (
+        ROOT_DIR
+        / "examples"
+        / "continuous-operation-receipt.example.yaml"
+    ),
+    "semantic_validator":
+        "validate_continuous_operation_receipt_semantics",
+}, 
 ]
 
 
@@ -1210,6 +1225,22 @@ def validate_multi_wing_matrix_semantics(
         "matrix_health.rotation_ready is inconsistent",
     )
 
+{
+    "name": "Continuous Operation Receipt",
+    "schema": (
+        ROOT_DIR
+        / "schemas"
+        / "continuous-operation-receipt.schema.json"
+    ),
+    "example": (
+        ROOT_DIR
+        / "examples"
+        / "continuous-operation-receipt.example.yaml"
+    ),
+    "semantic_validator":
+        "validate_continuous_operation_receipt_semantics",
+},
+    
     try:
         for target in VALIDATION_TARGETS:
             schema_valid, document = validate_schema(
