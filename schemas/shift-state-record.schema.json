@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/shift-state-record.schema.json",
+  "title": "Shift State Record",
+  "description": "Records the current temporal shift state of an AI model replica, agent group, multi-wing group, or service cluster.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_id",
+    "rotation_cycle_id",
+    "system_id",
+    "shift_unit",
+    "shift_state",
+    "previous_shift_state",
+    "next_planned_shift_state",
+    "service_authority",
+    "state_window",
+    "responsibilities",
+    "load_snapshot",
+    "handoff",
+    "rotation_policy",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "shift_state_record"
+    },
+    "record_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "rotation_cycle_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "system_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "shift_unit": {
+      "$ref": "#/$defs/shift_unit"
+    },
+    "shift_state": {
+      "$ref": "#/$defs/shift_state"
+    },
+    "previous_shift_state": {
+      "$ref": "#/$defs/shift_state"
+    },
+    "next_planned_shift_state": {
+      "$ref": "#/$defs/shift_state"
+    },
+    "service_authority": {
+      "type": "string",
+      "enum": [
+        "PRIMARY",
+        "STANDBY",
+        "INTERNAL_ONLY"
+      ]
+    },
+    "state_window": {
+      "$ref": "#/$defs/state_window"
+    },
+    "responsibilities": {
+      "$ref": "#/$defs/responsibilities"
+    },
+    "load_snapshot": {
+      "$ref": "#/$defs/load_snapshot"
+    },
+    "handoff": {
+      "$ref": "#/$defs/handoff"
+    },
+    "rotation_policy": {
+      "$ref": "#/$defs/rotation_policy"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "shift_state": {
+            "const": "ACTIVE"
+          }
+        },
+        "required": [
+          "shift_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "previous_shift_state": {
+            "const": "SHADOW"
+          },
+          "next_planned_shift_state": {
+            "const": "REGENERATION"
+          },
+          "service_authority": {
+            "const": "PRIMARY"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shift_state": {
+            "const": "REGENERATION"
+          }
+        },
+        "required": [
+          "shift_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "previous_shift_state": {
+            "const": "ACTIVE"
+          },
+          "next_planned_shift_state": {
+            "const": "SHADOW"
+          },
+          "service_authority": {
+            "const": "INTERNAL_ONLY"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "shift_state": {
+            "const": "SHADOW"
+          }
+        },
+        "required": [
+          "shift_state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "previous_shift_state": {
+            "const": "REGENERATION"
+          },
+          "next_planned_shift_state": {
+            "const": "ACTIVE"
+          },
+          "service_authority": {
+            "const": "STANDBY"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "shift_state": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "REGENERATION",
+        "SHADOW"
+      ]
+    },
+    "shift_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "unit_type",
+        "members"
+      ],
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "unit_type": {
+          "type": "string",
+          "enum": [
+            "MODEL_REPLICA",
+            "AGENT_GROUP",
+            "MULTI_WING_GROUP",
+            "SERVICE_CLUSTER",
+            "HYBRID"
+          ]
+        },
+        "display_name": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "members": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/member"
+          }
+        }
+      }
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "member_id",
+        "member_role"
+      ],
+      "properties": {
+        "member_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "member_role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "model_class": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "provider": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "state_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "started_at",
+        "planned_end_at"
+      ],
+      "properties": {
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "planned_end_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actual_end_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "sequence_number": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "responsibilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_duties",
+        "prohibited_duties"
+      ],
+      "properties": {
+        "primary_duties": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "prohibited_duties": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "load_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compute_load_percent",
+        "memory_load_percent",
+        "queue_depth",
+        "error_rate",
+        "reserved_capacity_percent",
+        "health_state",
+        "observed_at"
+      ],
+      "properties": {
+        "compute_load_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "memory_load_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "queue_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "reserved_capacity_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "health_state": {
+          "type": "string",
+          "enum": [
+            "HEALTHY",
+            "DEGRADED",
+            "BLOCKED"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "incoming_from_unit_id",
+        "outgoing_to_unit_id",
+        "readiness",
+        "trace_checkpoint_ref",
+        "blockers"
+      ],
+      "properties": {
+        "incoming_from_unit_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "outgoing_to_unit_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "readiness": {
+          "type": "string",
+          "enum": [
+            "NOT_REQUIRED",
+            "PREPARING",
+            "READY",
+            "BLOCKED"
+          ]
+        },
+        "trace_checkpoint_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "blockers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        }
+      }
+    },
+    "rotation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "trigger_mode",
+        "maximum_shift_duration_seconds",
+        "rotation_required"
+      ],
+      "properties": {
+        "policy_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "trigger_mode": {
+          "type": "string",
+          "enum": [
+            "SCHEDULED",
+            "ADAPTIVE",
+            "HYBRID"
+          ]
+        },
+        "maximum_shift_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rotation_required": {
+          "type": "boolean"
+        },
+        "rotation_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status"
+      ],
+      "properties": {
+        "recorded_by": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
