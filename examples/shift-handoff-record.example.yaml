@@ -1,0 +1,155 @@
+schema_version: "0.2.0"
+record_type: shift_handoff_record
+
+record_id: shr-20260712-0001
+handoff_id: handoff-tri-cycle-20260712-a-01
+rotation_cycle_id: tri-cycle-20260712-a
+system_id: kazene-distributed-ai-grid
+handoff_phase: COMPLETED
+
+participants:
+  releasing_unit:
+    unit_id: wing-group-a
+    role: RELEASING
+    pre_state: ACTIVE
+    post_state: REGENERATION
+    pre_authority: PRIMARY
+    post_authority: INTERNAL_ONLY
+    state_record_ref: state://wing-group-a/ssr-20260712-0001
+
+  assuming_unit:
+    unit_id: wing-group-b
+    role: ASSUMING
+    pre_state: SHADOW
+    post_state: ACTIVE
+    pre_authority: STANDBY
+    post_authority: PRIMARY
+    state_record_ref: state://wing-group-b/ssr-20260712-0002
+
+  continuity_unit:
+    unit_id: wing-group-c
+    role: CONTINUITY
+    pre_state: REGENERATION
+    post_state: SHADOW
+    pre_authority: INTERNAL_ONLY
+    post_authority: STANDBY
+    state_record_ref: state://wing-group-c/ssr-20260712-0003
+
+handoff_window:
+  prepared_at: "2026-07-12T07:55:00Z"
+  planned_cutover_at: "2026-07-12T08:00:00Z"
+  completed_at: "2026-07-12T08:00:02Z"
+  maximum_duration_seconds: 600
+
+transfer_payload:
+  trace_checkpoint_ref: trace://tri-cycle-20260712-a/checkpoint-0058
+  trace_sequence: 58
+
+  active_tasks:
+    - task_id: task-8821
+      status: RUNNING
+      priority: HIGH
+      transfer_action: CONTINUE
+      owner_before: wing-group-a
+      owner_after: wing-group-b
+      context_ref: context://task-8821/revision-14
+      deadline: "2026-07-12T08:20:00Z"
+      blocking: false
+
+    - task_id: task-8827
+      status: WAITING_EXTERNAL
+      priority: NORMAL
+      transfer_action: RETURN_TO_QUEUE
+      owner_before: wing-group-a
+      owner_after: wing-group-b
+      context_ref: context://task-8827/revision-3
+      deadline: null
+      blocking: false
+
+  unresolved_decisions:
+    - decision_id: decision-431
+      question: Whether the external tool response should be retried or escalated.
+      status: DEFERRED
+      recommended_action: Retry once after the next backoff window, then escalate.
+      evidence_refs:
+        - trace://tri-cycle-20260712-a/decision-431
+
+  memory_delta_refs:
+    - memory://wing-group-a/delta-20260712-0759
+
+  external_commitments:
+    - Preserve the response deadline for task-8821.
+
+  tool_session_refs:
+    - tool-session://executor-a1/session-119
+
+  risk_flags:
+    - risk_id: risk-204
+      severity: MEDIUM
+      category: EXTERNAL_DEPENDENCY
+      description: External provider latency is above the normal operating range.
+      blocking: false
+      mitigation_ref: mitigation://provider-backoff-policy-v2
+
+  non_transferable_items:
+    - Temporary credentials remain bound to wing-group-a and must not be copied.
+
+authority_transfer:
+  mode: ATOMIC
+  status: COMPLETE
+  authority_lease_id: lease-primary-20260712-0800
+  previous_holder: wing-group-a
+  next_holder: wing-group-b
+  dual_primary_allowed: false
+  released_at: "2026-07-12T08:00:00.100Z"
+  acquired_at: "2026-07-12T08:00:00.101Z"
+  rollback_target_unit_id: wing-group-a
+
+verification:
+  verifier_unit_id: wing-group-c
+
+  checks:
+    - check_id: check-trace-01
+      check_type: TRACE_INTEGRITY
+      status: PASS
+      performed_by: wing-group-c
+      evidence_ref: audit://handoff-01/trace-integrity
+
+    - check_id: check-authority-01
+      check_type: AUTHORITY_EXCLUSIVITY
+      status: PASS
+      performed_by: wing-group-c
+      evidence_ref: audit://handoff-01/authority-lease
+
+    - check_id: check-continuity-01
+      check_type: SERVICE_CONTINUITY
+      status: PASS
+      performed_by: wing-group-c
+      evidence_ref: audit://handoff-01/service-continuity
+
+  required_checks_passed: true
+  blocking_issues: []
+
+acceptance:
+  status: ACCEPTED
+  accepted_by_unit_id: wing-group-b
+  accepted_at: "2026-07-12T08:00:01Z"
+  conditions: []
+  resume_checkpoint_ref: trace://tri-cycle-20260712-a/checkpoint-0058
+
+continuity_guard:
+  guarded_by_unit_id: wing-group-c
+  service_status: MAINTAINED
+  maximum_observed_gap_ms: 1
+  duplicate_execution_detected: false
+  rollback_ready: true
+  continuity_evidence_ref: audit://handoff-01/continuity
+
+audit:
+  recorded_by: tri-shift-controller
+  immutable: true
+  validation_status: VALID
+  previous_handoff_ref: handoff://tri-cycle-20260711-c-03
+  checksum: null
+
+created_at: "2026-07-12T08:00:03Z"
