@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/adaptive-rotation-policy.schema.json",
+  "title": "Adaptive Rotation Policy",
+  "description": "Defines adaptive, scheduled, fairness-aware, and emergency rules for rotating tri-shift AI units.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "policy_id",
+    "system_id",
+    "rotation_mode",
+    "evaluation_cadence",
+    "signals",
+    "scoring",
+    "hard_triggers",
+    "guards",
+    "fairness",
+    "fallback",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.3.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "adaptive_rotation_policy"
+    },
+    "policy_id": {
+      "$ref": "#/$defs/id"
+    },
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "rotation_mode": {
+      "type": "string",
+      "enum": [
+        "SCHEDULED",
+        "ADAPTIVE",
+        "HYBRID"
+      ]
+    },
+    "evaluation_cadence": {
+      "$ref": "#/$defs/evaluation_cadence"
+    },
+    "signals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/signal_rule"
+      }
+    },
+    "scoring": {
+      "$ref": "#/$defs/scoring"
+    },
+    "hard_triggers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/hard_trigger"
+      }
+    },
+    "guards": {
+      "$ref": "#/$defs/guards"
+    },
+    "fairness": {
+      "$ref": "#/$defs/fairness"
+    },
+    "fallback": {
+      "$ref": "#/$defs/fallback"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "evaluation_cadence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interval_seconds",
+        "minimum_samples",
+        "rolling_window_seconds"
+      ],
+      "properties": {
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_samples": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rolling_window_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "signal_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signal_id",
+        "source_metric",
+        "direction",
+        "weight",
+        "warning_threshold",
+        "critical_threshold",
+        "required"
+      ],
+      "properties": {
+        "signal_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_metric": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "HIGHER_IS_WORSE",
+            "LOWER_IS_WORSE"
+          ]
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "warning_threshold": {
+          "type": "number"
+        },
+        "critical_threshold": {
+          "type": "number"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "warning_score",
+        "rotation_score",
+        "required_consecutive_breaches"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "WEIGHTED_SUM"
+        },
+        "warning_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "rotation_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "required_consecutive_breaches": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "hard_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger_id",
+        "signal_id",
+        "operator",
+        "threshold",
+        "action"
+      ],
+      "properties": {
+        "trigger_id": {
+          "$ref": "#/$defs/id"
+        },
+        "signal_id": {
+          "$ref": "#/$defs/id"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "GT",
+            "GTE",
+            "LT",
+            "LTE"
+          ]
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "ROTATE_NOW",
+            "EMERGENCY_REASSIGN",
+            "ABORT_ACTIVE_WORK"
+          ]
+        }
+      }
+    },
+    "guards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_active_duration_seconds",
+        "maximum_active_duration_seconds",
+        "minimum_shadow_readiness_score",
+        "minimum_regeneration_completion_score",
+        "cooldown_seconds",
+        "handoff_required",
+        "allow_rotation_with_blockers"
+      ],
+      "properties": {
+        "minimum_active_duration_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum_active_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minimum_shadow_readiness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimum_regeneration_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cooldown_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "handoff_required": {
+          "type": "boolean"
+        },
+        "allow_rotation_with_blockers": {
+          "type": "boolean"
+        }
+      }
+    },
+    "fairness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "maximum_consecutive_active_shifts",
+        "rolling_shift_window",
+        "maximum_active_share",
+        "force_rotation_debt_threshold"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "maximum_consecutive_active_shifts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rolling_shift_window": {
+          "type": "integer",
+          "minimum": 3
+        },
+        "maximum_active_share": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "force_rotation_debt_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "on_missing_required_signal",
+        "on_no_ready_shadow_unit",
+        "on_no_regenerated_unit",
+        "on_evaluation_failure"
+      ],
+      "properties": {
+        "on_missing_required_signal": {
+          "$ref": "#/$defs/fallback_action"
+        },
+        "on_no_ready_shadow_unit": {
+          "$ref": "#/$defs/fallback_action"
+        },
+        "on_no_regenerated_unit": {
+          "$ref": "#/$defs/fallback_action"
+        },
+        "on_evaluation_failure": {
+          "$ref": "#/$defs/fallback_action"
+        }
+      }
+    },
+    "fallback_action": {
+      "type": "string",
+      "enum": [
+        "HOLD_AND_ESCALATE",
+        "EXTEND_WITH_GUARD",
+        "EMERGENCY_REASSIGN",
+        "ENTER_DEGRADED_MODE"
+      ]
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status",
+        "checksum"
+      ],
+      "properties": {
+        "recorded_by": {
+          "$ref": "#/$defs/id"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
