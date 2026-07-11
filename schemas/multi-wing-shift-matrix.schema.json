@@ -253,182 +253,182 @@
       }
     },
     "base_slot": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "group_id",
-        "member_id",
-        "state",
-        "authority",
-        "model_ref",
-        "provider",
-        "region",
-        "capabilities",
-        "health_state",
-        "state_record_ref"
+  "type": "object",
+  "required": [
+    "group_id",
+    "member_id",
+    "state",
+    "authority",
+    "model_ref",
+    "provider",
+    "region",
+    "capabilities",
+    "health_state",
+    "state_record_ref"
+  ],
+  "properties": {
+    "group_id": {
+      "$ref": "#/$defs/id"
+    },
+    "member_id": {
+      "$ref": "#/$defs/id"
+    },
+    "state": {
+      "$ref": "#/$defs/wing_state"
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "model_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "provider": {
+      "type": [
+        "string",
+        "null"
       ],
-      "properties": {
-        "group_id": {
-          "$ref": "#/$defs/id"
-        },
-        "member_id": {
-          "$ref": "#/$defs/id"
-        },
-        "state": {
-          "$ref": "#/$defs/wing_state"
-        },
-        "authority": {
-          "$ref": "#/$defs/authority"
-        },
-        "model_ref": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 256
-        },
-        "provider": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 128
-        },
-        "region": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 128
-        },
-        "capabilities": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 128
-          }
-        },
-        "health_state": {
-          "$ref": "#/$defs/health_state"
-        },
-        "state_record_ref": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "maxLength": 512
-        }
+      "maxLength": 128
+    },
+    "region": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
       }
     },
-    "active_slot": {
-      "allOf": [
-        {
-          "$ref": "#/$defs/base_slot"
-        },
-        {
-          "type": "object",
-          "required": [
-            "execution_enabled",
-            "current_task_count"
-          ],
-          "properties": {
-            "state": {
-              "const": "ACTIVE"
-            },
-            "authority": {
-              "const": "PRIMARY"
-            },
-            "execution_enabled": {
-              "type": "boolean",
-              "const": true
-            },
-            "current_task_count": {
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        }
-      ]
+    "health_state": {
+      "$ref": "#/$defs/health_state"
     },
-    "shadow_slot": {
-      "allOf": [
-        {
-          "$ref": "#/$defs/base_slot"
-        },
-        {
-          "type": "object",
-          "required": [
-            "takeover_readiness_score",
-            "synchronization_score",
-            "sync_checkpoint_ref"
-          ],
-          "properties": {
-            "state": {
-              "const": "SHADOW"
-            },
-            "authority": {
-              "const": "STANDBY"
-            },
-            "takeover_readiness_score": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "synchronization_score": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "sync_checkpoint_ref": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "maxLength": 512
-            }
-          }
-        }
-      ]
+    "state_record_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 512
+    }
+  }
+},
+"active_slot": {
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/$defs/base_slot"
+    }
+  ],
+  "required": [
+    "execution_enabled",
+    "current_task_count"
+  ],
+  "properties": {
+    "state": {
+      "const": "ACTIVE"
     },
-    "regeneration_slot": {
-      "allOf": [
-        {
-          "$ref": "#/$defs/base_slot"
-        },
-        {
-          "type": "object",
-          "required": [
-            "regeneration_completion_score",
-            "maintenance_actions",
-            "external_execution_enabled"
-          ],
-          "properties": {
-            "state": {
-              "const": "REGENERATION"
-            },
-            "authority": {
-              "const": "INTERNAL_ONLY"
-            },
-            "regeneration_completion_score": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            "maintenance_actions": {
-              "type": "array",
-              "minItems": 1,
-              "uniqueItems": true,
-              "items": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 256
-              }
-            },
-            "external_execution_enabled": {
-              "type": "boolean",
-              "const": false
-            }
+    "authority": {
+      "const": "PRIMARY"
+    },
+    "execution_enabled": {
+      "type": "boolean",
+      "const": true
+    },
+    "current_task_count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "unevaluatedProperties": false
+},
+"shadow_slot": {
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/$defs/base_slot"
+    }
+  ],
+  "required": [
+    "takeover_readiness_score",
+    "synchronization_score",
+    "sync_checkpoint_ref"
+  ],
+  "properties": {
+    "state": {
+      "const": "SHADOW"
+    },
+    "authority": {
+      "const": "STANDBY"
+    },
+    "takeover_readiness_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "synchronization_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sync_checkpoint_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 512
+    }
+  },
+  "unevaluatedProperties": false
+},
+"regeneration_slot": {
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "#/$defs/base_slot"
+    }
+  ],
+  "required": [
+    "regeneration_completion_score",
+    "maintenance_actions",
+    "external_execution_enabled"
+  ],
+  "properties": {
+    "state": {
+      "const": "REGENERATION"
+    },
+    "authority": {
+      "const": "INTERNAL_ONLY"
+    },
+    "regeneration_completion_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "maintenance_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "external_execution_enabled": {
+      "type": "boolean",
+      "const": false
+    }
+  },
+  "unevaluatedProperties": false
+}
           }
         }
       ]
