@@ -1,0 +1,846 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/continuous-operation-receipt.schema.json",
+  "title": "Continuous Operation Receipt",
+  "description": "Summarizes and audits one completed tri-shift operating cycle across state, handoff, adaptive rotation, and Multi-Wing allocation records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "receipt_id",
+    "system_id",
+    "rotation_cycle_id",
+    "period",
+    "source_records",
+    "rotation_summary",
+    "continuity_outcome",
+    "load_distribution",
+    "fairness_outcome",
+    "regeneration_outcome",
+    "wing_outcomes",
+    "incidents",
+    "final_assessment",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.5.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "continuous_operation_receipt"
+    },
+    "receipt_id": {
+      "$ref": "#/$defs/id"
+    },
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "rotation_cycle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "period": {
+      "$ref": "#/$defs/period"
+    },
+    "source_records": {
+      "$ref": "#/$defs/source_records"
+    },
+    "rotation_summary": {
+      "$ref": "#/$defs/rotation_summary"
+    },
+    "continuity_outcome": {
+      "$ref": "#/$defs/continuity_outcome"
+    },
+    "load_distribution": {
+      "$ref": "#/$defs/load_distribution"
+    },
+    "fairness_outcome": {
+      "$ref": "#/$defs/fairness_outcome"
+    },
+    "regeneration_outcome": {
+      "$ref": "#/$defs/regeneration_outcome"
+    },
+    "wing_outcomes": {
+      "$ref": "#/$defs/wing_outcomes"
+    },
+    "incidents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/incident"
+      }
+    },
+    "final_assessment": {
+      "$ref": "#/$defs/final_assessment"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "started_at",
+        "ended_at",
+        "duration_seconds"
+      ],
+      "properties": {
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "source_records": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shift_state_record_refs",
+        "shift_handoff_record_refs",
+        "rotation_evaluation_record_refs",
+        "matrix_record_refs"
+      ],
+      "properties": {
+        "shift_state_record_refs": {
+          "type": "array",
+          "minItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        },
+        "shift_handoff_record_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        },
+        "rotation_evaluation_record_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        },
+        "matrix_record_refs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        }
+      }
+    },
+    "domain_rotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_id",
+        "releasing_group_id",
+        "assuming_group_id",
+        "continuity_group_id",
+        "handoff_record_ref",
+        "status",
+        "authority_gap_ms",
+        "duplicate_primary_detected",
+        "rollback_used"
+      ],
+      "properties": {
+        "domain_id": {
+          "$ref": "#/$defs/id"
+        },
+        "releasing_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "assuming_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "continuity_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "handoff_record_ref": {
+          "$ref": "#/$defs/reference"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "COMPLETED",
+            "ABORTED",
+            "ROLLED_BACK",
+            "DEGRADED"
+          ]
+        },
+        "authority_gap_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_primary_detected": {
+          "type": "boolean"
+        },
+        "rollback_used": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rotation_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planned_rotations",
+        "completed_rotations",
+        "aborted_rotations",
+        "emergency_rotations",
+        "domain_rotations"
+      ],
+      "properties": {
+        "planned_rotations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "completed_rotations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "aborted_rotations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "emergency_rotations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "domain_rotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/domain_rotation"
+          }
+        }
+      }
+    },
+    "continuity_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service_status",
+        "availability_percent",
+        "total_interruption_ms",
+        "maximum_observed_gap_ms",
+        "duplicate_execution_events",
+        "authority_conflict_events",
+        "continuity_slo_percent",
+        "continuity_slo_met"
+      ],
+      "properties": {
+        "service_status": {
+          "type": "string",
+          "enum": [
+            "CONTINUOUS",
+            "DEGRADED",
+            "INTERRUPTED"
+          ]
+        },
+        "availability_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "total_interruption_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maximum_observed_gap_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_execution_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "authority_conflict_events": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "continuity_slo_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "continuity_slo_met": {
+          "type": "boolean"
+        }
+      }
+    },
+    "unit_load_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "active_seconds_before",
+        "active_seconds_after",
+        "active_share_before",
+        "active_share_after",
+        "compute_work_share",
+        "tasks_completed",
+        "fairness_debt_before",
+        "fairness_debt_after"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "active_seconds_before": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_seconds_after": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_share_before": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "active_share_after": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "compute_work_share": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "tasks_completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fairness_debt_before": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fairness_debt_after": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "load_distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "units",
+        "total_tasks_completed",
+        "compute_share_total",
+        "active_share_before_total",
+        "active_share_after_total"
+      ],
+      "properties": {
+        "units": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "$ref": "#/$defs/unit_load_outcome"
+          }
+        },
+        "total_tasks_completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compute_share_total": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "active_share_before_total": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "active_share_after_total": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "fairness_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "concentration_index_before",
+        "concentration_index_after",
+        "active_share_spread_before",
+        "active_share_spread_after",
+        "maximum_active_share",
+        "fairness_improved",
+        "units_above_maximum_share"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "ACTIVE_SHARE_CONCENTRATION"
+        },
+        "concentration_index_before": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "concentration_index_after": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "active_share_spread_before": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "active_share_spread_after": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maximum_active_share": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "fairness_improved": {
+          "type": "boolean"
+        },
+        "units_above_maximum_share": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      }
+    },
+    "regeneration_unit_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "completion_score",
+        "actions_completed",
+        "actions_failed",
+        "returned_to_shadow",
+        "blocking_issue_count"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "actions_completed": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "actions_failed": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "returned_to_shadow": {
+          "type": "boolean"
+        },
+        "blocking_issue_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "regeneration_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_required_completion_score",
+        "average_completion_score",
+        "units",
+        "all_required_regeneration_complete"
+      ],
+      "properties": {
+        "minimum_required_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "average_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "units": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/regeneration_unit_outcome"
+          }
+        },
+        "all_required_regeneration_complete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "wing_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wing_id",
+        "criticality",
+        "active_member_id",
+        "shadow_member_id",
+        "regeneration_member_id",
+        "active_health",
+        "shadow_readiness_score",
+        "shadow_synchronization_score",
+        "regeneration_completion_score",
+        "fully_covered",
+        "blocking_event_count"
+      ],
+      "properties": {
+        "wing_id": {
+          "$ref": "#/$defs/id"
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "OPTIONAL",
+            "SUPPORTING",
+            "CRITICAL"
+          ]
+        },
+        "active_member_id": {
+          "$ref": "#/$defs/id"
+        },
+        "shadow_member_id": {
+          "$ref": "#/$defs/id"
+        },
+        "regeneration_member_id": {
+          "$ref": "#/$defs/id"
+        },
+        "active_health": {
+          "type": "string",
+          "enum": [
+            "HEALTHY",
+            "DEGRADED",
+            "BLOCKED"
+          ]
+        },
+        "shadow_readiness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "shadow_synchronization_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "regeneration_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fully_covered": {
+          "type": "boolean"
+        },
+        "blocking_event_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "wing_outcomes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_wings",
+        "critical_wings",
+        "fully_covered_wings",
+        "fully_covered_critical_wings",
+        "coverage_ratio",
+        "critical_coverage_ratio",
+        "wings"
+      ],
+      "properties": {
+        "total_wings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "critical_wings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fully_covered_wings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fully_covered_critical_wings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "critical_coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "wings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/wing_outcome"
+          }
+        }
+      }
+    },
+    "incident": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "incident_id",
+        "severity",
+        "category",
+        "description",
+        "blocking",
+        "resolved",
+        "evidence_ref"
+      ],
+      "properties": {
+        "incident_id": {
+          "$ref": "#/$defs/id"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "INFO",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "HANDOFF",
+            "AUTHORITY",
+            "CONTINUITY",
+            "LOAD",
+            "FAIRNESS",
+            "REGENERATION",
+            "WING_COVERAGE",
+            "SAFETY",
+            "OTHER"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "blocking": {
+          "type": "boolean"
+        },
+        "resolved": {
+          "type": "boolean"
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "final_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receipt_status",
+        "reason_codes",
+        "cycle_objectives_met",
+        "next_cycle_actions"
+      ],
+      "properties": {
+        "receipt_status": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "WARN",
+            "FAIL"
+          ]
+        },
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "cycle_objectives_met": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "next_cycle_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/next_cycle_action"
+          }
+        }
+      }
+    },
+    "next_cycle_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id",
+        "priority",
+        "description",
+        "target_ref",
+        "required_before_next_rotation"
+      ],
+      "properties": {
+        "action_id": {
+          "$ref": "#/$defs/id"
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "LOW",
+            "NORMAL",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "target_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "required_before_next_rotation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status",
+        "previous_receipt_ref",
+        "evidence_bundle_ref",
+        "checksum"
+      ],
+      "properties": {
+        "recorded_by": {
+          "$ref": "#/$defs/id"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "previous_receipt_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "evidence_bundle_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
