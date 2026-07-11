@@ -1,0 +1,299 @@
+schema_version: "0.5.0"
+record_type: continuous_operation_receipt
+
+receipt_id: cor-20260712-cycle-a
+system_id: kazene-distributed-ai-grid
+rotation_cycle_id: tri-cycle-20260712-a
+
+period:
+  started_at: "2026-07-12T00:00:00Z"
+  ended_at: "2026-07-13T00:00:00Z"
+  duration_seconds: 86400
+
+source_records:
+  shift_state_record_refs:
+    - state://wing-group-a/ssr-20260712-0001
+    - state://wing-group-b/ssr-20260712-0002
+    - state://wing-group-c/ssr-20260712-0003
+
+  shift_handoff_record_refs:
+    - handoff://operations-domain/handoff-001
+    - handoff://assurance-domain/handoff-001
+    - handoff://operations-domain/handoff-002
+    - handoff://assurance-domain/handoff-002
+
+  rotation_evaluation_record_refs:
+    - evaluation://rotation-eval-20260712-0800
+    - evaluation://rotation-eval-20260712-1600
+    - evaluation://rotation-eval-20260713-0000
+
+  matrix_record_refs:
+    - matrix://matrix-20260712-001
+    - matrix://matrix-20260712-002
+    - matrix://matrix-20260712-003
+
+rotation_summary:
+  planned_rotations: 4
+  completed_rotations: 4
+  aborted_rotations: 0
+  emergency_rotations: 0
+
+  domain_rotations:
+    - domain_id: operations-domain
+      releasing_group_id: operations-group-a
+      assuming_group_id: operations-group-b
+      continuity_group_id: operations-group-c
+      handoff_record_ref: handoff://operations-domain/handoff-001
+      status: COMPLETED
+      authority_gap_ms: 1
+      duplicate_primary_detected: false
+      rollback_used: false
+
+    - domain_id: assurance-domain
+      releasing_group_id: assurance-group-a
+      assuming_group_id: assurance-group-b
+      continuity_group_id: assurance-group-c
+      handoff_record_ref: handoff://assurance-domain/handoff-001
+      status: COMPLETED
+      authority_gap_ms: 2
+      duplicate_primary_detected: false
+      rollback_used: false
+
+    - domain_id: operations-domain
+      releasing_group_id: operations-group-b
+      assuming_group_id: operations-group-c
+      continuity_group_id: operations-group-a
+      handoff_record_ref: handoff://operations-domain/handoff-002
+      status: COMPLETED
+      authority_gap_ms: 1
+      duplicate_primary_detected: false
+      rollback_used: false
+
+    - domain_id: assurance-domain
+      releasing_group_id: assurance-group-b
+      assuming_group_id: assurance-group-c
+      continuity_group_id: assurance-group-a
+      handoff_record_ref: handoff://assurance-domain/handoff-002
+      status: COMPLETED
+      authority_gap_ms: 2
+      duplicate_primary_detected: false
+      rollback_used: false
+
+continuity_outcome:
+  service_status: CONTINUOUS
+  availability_percent: 99.999993
+  total_interruption_ms: 6
+  maximum_observed_gap_ms: 2
+  duplicate_execution_events: 0
+  authority_conflict_events: 0
+  continuity_slo_percent: 99.999
+  continuity_slo_met: true
+
+load_distribution:
+  units:
+    - unit_id: wing-group-a
+      active_seconds_before: 43200
+      active_seconds_after: 28800
+      active_share_before: 0.50
+      active_share_after: 0.333333
+      compute_work_share: 0.35
+      tasks_completed: 341
+      fairness_debt_before: 0.82
+      fairness_debt_after: 0.38
+
+    - unit_id: wing-group-b
+      active_seconds_before: 25920
+      active_seconds_after: 28800
+      active_share_before: 0.30
+      active_share_after: 0.333333
+      compute_work_share: 0.33
+      tasks_completed: 326
+      fairness_debt_before: 0.35
+      fairness_debt_after: 0.28
+
+    - unit_id: wing-group-c
+      active_seconds_before: 17280
+      active_seconds_after: 28800
+      active_share_before: 0.20
+      active_share_after: 0.333334
+      compute_work_share: 0.32
+      tasks_completed: 319
+      fairness_debt_before: 0.18
+      fairness_debt_after: 0.22
+
+  total_tasks_completed: 986
+  compute_share_total: 1.0
+  active_share_before_total: 1.0
+  active_share_after_total: 1.0
+
+fairness_outcome:
+  method: ACTIVE_SHARE_CONCENTRATION
+  concentration_index_before: 0.38
+  concentration_index_after: 0.333333
+  active_share_spread_before: 0.30
+  active_share_spread_after: 0.000001
+  maximum_active_share: 0.45
+  fairness_improved: true
+  units_above_maximum_share: []
+
+regeneration_outcome:
+  minimum_required_completion_score: 0.90
+  average_completion_score: 0.963333
+
+  units:
+    - unit_id: wing-group-a
+      completion_score: 0.96
+      actions_completed:
+        - context-compaction
+        - trace-consistency-check
+        - tool-session-cleanup
+      actions_failed: []
+      returned_to_shadow: true
+      blocking_issue_count: 0
+
+    - unit_id: wing-group-b
+      completion_score: 0.95
+      actions_completed:
+        - memory-delta-reconciliation
+        - permission-drift-check
+      actions_failed: []
+      returned_to_shadow: true
+      blocking_issue_count: 0
+
+    - unit_id: wing-group-c
+      completion_score: 0.98
+      actions_completed:
+        - cache-cleanup
+        - checkpoint-integrity-scan
+        - validation-rule-refresh
+      actions_failed: []
+      returned_to_shadow: true
+      blocking_issue_count: 0
+
+  all_required_regeneration_complete: true
+
+wing_outcomes:
+  total_wings: 6
+  critical_wings: 5
+  fully_covered_wings: 6
+  fully_covered_critical_wings: 5
+  coverage_ratio: 1.0
+  critical_coverage_ratio: 1.0
+
+  wings:
+    - wing_id: finder
+      criticality: SUPPORTING
+      active_member_id: finder-c
+      shadow_member_id: finder-a
+      regeneration_member_id: finder-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.96
+      shadow_synchronization_score: 0.97
+      regeneration_completion_score: 0.95
+      fully_covered: true
+      blocking_event_count: 0
+
+    - wing_id: analyst
+      criticality: CRITICAL
+      active_member_id: analyst-c
+      shadow_member_id: analyst-a
+      regeneration_member_id: analyst-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.95
+      shadow_synchronization_score: 0.96
+      regeneration_completion_score: 0.94
+      fully_covered: true
+      blocking_event_count: 0
+
+    - wing_id: executor
+      criticality: CRITICAL
+      active_member_id: executor-c
+      shadow_member_id: executor-a
+      regeneration_member_id: executor-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.93
+      shadow_synchronization_score: 0.95
+      regeneration_completion_score: 0.94
+      fully_covered: true
+      blocking_event_count: 0
+
+    - wing_id: verifier
+      criticality: CRITICAL
+      active_member_id: verifier-c
+      shadow_member_id: verifier-a
+      regeneration_member_id: verifier-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.97
+      shadow_synchronization_score: 0.98
+      regeneration_completion_score: 0.97
+      fully_covered: true
+      blocking_event_count: 0
+
+    - wing_id: boundary
+      criticality: CRITICAL
+      active_member_id: boundary-c
+      shadow_member_id: boundary-a
+      regeneration_member_id: boundary-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.96
+      shadow_synchronization_score: 0.97
+      regeneration_completion_score: 0.96
+      fully_covered: true
+      blocking_event_count: 0
+
+    - wing_id: trace-core
+      criticality: CRITICAL
+      active_member_id: trace-core-c
+      shadow_member_id: trace-core-a
+      regeneration_member_id: trace-core-b
+      active_health: HEALTHY
+      shadow_readiness_score: 0.98
+      shadow_synchronization_score: 0.99
+      regeneration_completion_score: 0.99
+      fully_covered: true
+      blocking_event_count: 0
+
+incidents:
+  - incident_id: incident-provider-latency-01
+    severity: LOW
+    category: CONTINUITY
+    description: External provider latency increased during the first operations-domain handoff without interrupting service.
+    blocking: false
+    resolved: true
+    evidence_ref: audit://operations-domain/handoff-001/provider-latency
+
+final_assessment:
+  receipt_status: PASS
+
+  reason_codes:
+    - ALL_PLANNED_ROTATIONS_COMPLETED
+    - CONTINUITY_SLO_MET
+    - NO_AUTHORITY_CONFLICT
+    - NO_DUPLICATE_PRIMARY_EXECUTION
+    - FAIRNESS_IMPROVED
+    - ALL_REGENERATION_COMPLETED
+    - FULL_CRITICAL_WING_COVERAGE
+
+  cycle_objectives_met:
+    - Continuous service was maintained.
+    - Active responsibility was distributed across all three groups.
+    - All planned handoffs completed successfully.
+    - Every critical Wing retained complete three-slot coverage.
+    - All regeneration groups returned to Shadow duty.
+
+  next_cycle_actions:
+    - action_id: review-provider-latency
+      priority: NORMAL
+      description: Review the latency increase observed during the first operations-domain handoff.
+      target_ref: audit://operations-domain/handoff-001/provider-latency
+      required_before_next_rotation: false
+
+audit:
+  recorded_by: continuous-operation-auditor
+  immutable: true
+  validation_status: VALID
+  previous_receipt_ref: receipt://cor-20260711-cycle-c
+  evidence_bundle_ref: evidence://tri-cycle-20260712-a
+  checksum: null
+
+created_at: "2026-07-13T00:00:05Z"
