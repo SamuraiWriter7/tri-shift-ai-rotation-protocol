@@ -1,0 +1,888 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/shift-handoff-record.schema.json",
+  "title": "Shift Handoff Record",
+  "description": "Records an atomic tri-shift rotation in which the active unit enters regeneration, the shadow unit assumes active authority, and the regeneration unit enters shadow duty.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "record_id",
+    "handoff_id",
+    "rotation_cycle_id",
+    "system_id",
+    "handoff_phase",
+    "participants",
+    "handoff_window",
+    "transfer_payload",
+    "authority_transfer",
+    "verification",
+    "acceptance",
+    "continuity_guard",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.2.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "shift_handoff_record"
+    },
+    "record_id": {
+      "$ref": "#/$defs/id"
+    },
+    "handoff_id": {
+      "$ref": "#/$defs/id"
+    },
+    "rotation_cycle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "system_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "handoff_phase": {
+      "type": "string",
+      "enum": [
+        "PREPARING",
+        "FROZEN",
+        "TRANSFERRING",
+        "VERIFYING",
+        "ACCEPTED",
+        "COMPLETED",
+        "ABORTED"
+      ]
+    },
+    "participants": {
+      "$ref": "#/$defs/participants"
+    },
+    "handoff_window": {
+      "$ref": "#/$defs/handoff_window"
+    },
+    "transfer_payload": {
+      "$ref": "#/$defs/transfer_payload"
+    },
+    "authority_transfer": {
+      "$ref": "#/$defs/authority_transfer"
+    },
+    "verification": {
+      "$ref": "#/$defs/verification"
+    },
+    "acceptance": {
+      "$ref": "#/$defs/acceptance"
+    },
+    "continuity_guard": {
+      "$ref": "#/$defs/continuity_guard"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "handoff_phase": {
+            "const": "COMPLETED"
+          }
+        },
+        "required": [
+          "handoff_phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authority_transfer": {
+            "properties": {
+              "status": {
+                "const": "COMPLETE"
+              }
+            }
+          },
+          "verification": {
+            "properties": {
+              "required_checks_passed": {
+                "const": true
+              }
+            }
+          },
+          "acceptance": {
+            "properties": {
+              "status": {
+                "const": "ACCEPTED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "handoff_phase": {
+            "const": "ABORTED"
+          }
+        },
+        "required": [
+          "handoff_phase"
+        ]
+      },
+      "then": {
+        "properties": {
+          "authority_transfer": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "NOT_STARTED",
+                  "ROLLED_BACK",
+                  "FAILED"
+                ]
+              }
+            }
+          },
+          "acceptance": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "REJECTED",
+                  "NOT_REQUESTED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "participant_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_id",
+        "role",
+        "pre_state",
+        "post_state",
+        "pre_authority",
+        "post_authority"
+      ],
+      "properties": {
+        "unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "RELEASING",
+            "ASSUMING",
+            "CONTINUITY"
+          ]
+        },
+        "pre_state": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "SHADOW",
+            "REGENERATION"
+          ]
+        },
+        "post_state": {
+          "type": "string",
+          "enum": [
+            "ACTIVE",
+            "SHADOW",
+            "REGENERATION"
+          ]
+        },
+        "pre_authority": {
+          "type": "string",
+          "enum": [
+            "PRIMARY",
+            "STANDBY",
+            "INTERNAL_ONLY"
+          ]
+        },
+        "post_authority": {
+          "type": "string",
+          "enum": [
+            "PRIMARY",
+            "STANDBY",
+            "INTERNAL_ONLY"
+          ]
+        },
+        "state_record_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "participants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "releasing_unit",
+        "assuming_unit",
+        "continuity_unit"
+      ],
+      "properties": {
+        "releasing_unit": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/participant_transition"
+            },
+            {
+              "properties": {
+                "role": {
+                  "const": "RELEASING"
+                },
+                "pre_state": {
+                  "const": "ACTIVE"
+                },
+                "post_state": {
+                  "const": "REGENERATION"
+                },
+                "pre_authority": {
+                  "const": "PRIMARY"
+                },
+                "post_authority": {
+                  "const": "INTERNAL_ONLY"
+                }
+              }
+            }
+          ]
+        },
+        "assuming_unit": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/participant_transition"
+            },
+            {
+              "properties": {
+                "role": {
+                  "const": "ASSUMING"
+                },
+                "pre_state": {
+                  "const": "SHADOW"
+                },
+                "post_state": {
+                  "const": "ACTIVE"
+                },
+                "pre_authority": {
+                  "const": "STANDBY"
+                },
+                "post_authority": {
+                  "const": "PRIMARY"
+                }
+              }
+            }
+          ]
+        },
+        "continuity_unit": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/participant_transition"
+            },
+            {
+              "properties": {
+                "role": {
+                  "const": "CONTINUITY"
+                },
+                "pre_state": {
+                  "const": "REGENERATION"
+                },
+                "post_state": {
+                  "const": "SHADOW"
+                },
+                "pre_authority": {
+                  "const": "INTERNAL_ONLY"
+                },
+                "post_authority": {
+                  "const": "STANDBY"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "handoff_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prepared_at",
+        "planned_cutover_at",
+        "completed_at",
+        "maximum_duration_seconds"
+      ],
+      "properties": {
+        "prepared_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "planned_cutover_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "maximum_duration_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "task_transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "status",
+        "priority",
+        "transfer_action",
+        "owner_before",
+        "owner_after",
+        "blocking"
+      ],
+      "properties": {
+        "task_id": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "QUEUED",
+            "RUNNING",
+            "PAUSED",
+            "WAITING_EXTERNAL",
+            "BLOCKED"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "LOW",
+            "NORMAL",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "transfer_action": {
+          "type": "string",
+          "enum": [
+            "CONTINUE",
+            "RESTART",
+            "PAUSE",
+            "RETURN_TO_QUEUE",
+            "ESCALATE"
+          ]
+        },
+        "owner_before": {
+          "$ref": "#/$defs/id"
+        },
+        "owner_after": {
+          "$ref": "#/$defs/id"
+        },
+        "context_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "deadline": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "blocking": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision_transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "question",
+        "status",
+        "recommended_action",
+        "evidence_refs"
+      ],
+      "properties": {
+        "decision_id": {
+          "$ref": "#/$defs/id"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "OPEN",
+            "DEFERRED",
+            "ESCALATED"
+          ]
+        },
+        "recommended_action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      }
+    },
+    "risk_flag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "risk_id",
+        "severity",
+        "category",
+        "description",
+        "blocking"
+      ],
+      "properties": {
+        "risk_id": {
+          "$ref": "#/$defs/id"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "INFO",
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "SAFETY",
+            "SECURITY",
+            "PRIVACY",
+            "QUALITY",
+            "RESOURCE",
+            "EXTERNAL_DEPENDENCY",
+            "CONSISTENCY",
+            "OTHER"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "blocking": {
+          "type": "boolean"
+        },
+        "mitigation_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "transfer_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trace_checkpoint_ref",
+        "trace_sequence",
+        "active_tasks",
+        "unresolved_decisions",
+        "memory_delta_refs",
+        "external_commitments",
+        "tool_session_refs",
+        "risk_flags",
+        "non_transferable_items"
+      ],
+      "properties": {
+        "trace_checkpoint_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "trace_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "active_tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/task_transfer"
+          }
+        },
+        "unresolved_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/decision_transfer"
+          }
+        },
+        "memory_delta_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "external_commitments": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "tool_session_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "risk_flags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/risk_flag"
+          }
+        },
+        "non_transferable_items": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "authority_transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "status",
+        "authority_lease_id",
+        "previous_holder",
+        "next_holder",
+        "dual_primary_allowed",
+        "released_at",
+        "acquired_at",
+        "rollback_target_unit_id"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "ATOMIC",
+            "TWO_PHASE",
+            "GUARDED"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_STARTED",
+            "FROZEN",
+            "IN_PROGRESS",
+            "COMPLETE",
+            "ROLLED_BACK",
+            "FAILED"
+          ]
+        },
+        "authority_lease_id": {
+          "$ref": "#/$defs/id"
+        },
+        "previous_holder": {
+          "$ref": "#/$defs/id"
+        },
+        "next_holder": {
+          "$ref": "#/$defs/id"
+        },
+        "dual_primary_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "released_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "acquired_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "rollback_target_unit_id": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "verification_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check_id",
+        "check_type",
+        "status",
+        "performed_by",
+        "evidence_ref"
+      ],
+      "properties": {
+        "check_id": {
+          "$ref": "#/$defs/id"
+        },
+        "check_type": {
+          "type": "string",
+          "enum": [
+            "TRACE_INTEGRITY",
+            "TASK_OWNERSHIP",
+            "AUTHORITY_EXCLUSIVITY",
+            "CONTEXT_READINESS",
+            "RISK_REVIEW",
+            "TOOL_SESSION_STATE",
+            "SERVICE_CONTINUITY",
+            "OTHER"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "PASS",
+            "FAIL",
+            "WAIVED"
+          ]
+        },
+        "performed_by": {
+          "$ref": "#/$defs/id"
+        },
+        "evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifier_unit_id",
+        "checks",
+        "required_checks_passed",
+        "blocking_issues"
+      ],
+      "properties": {
+        "verifier_unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/verification_check"
+          }
+        },
+        "required_checks_passed": {
+          "type": "boolean"
+        },
+        "blocking_issues": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "accepted_by_unit_id",
+        "accepted_at",
+        "conditions",
+        "resume_checkpoint_ref"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "NOT_REQUESTED",
+            "PENDING",
+            "ACCEPTED",
+            "REJECTED",
+            "CONDITIONAL"
+          ]
+        },
+        "accepted_by_unit_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "accepted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "conditions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "resume_checkpoint_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "continuity_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "guarded_by_unit_id",
+        "service_status",
+        "maximum_observed_gap_ms",
+        "duplicate_execution_detected",
+        "rollback_ready"
+      ],
+      "properties": {
+        "guarded_by_unit_id": {
+          "$ref": "#/$defs/id"
+        },
+        "service_status": {
+          "type": "string",
+          "enum": [
+            "MAINTAINED",
+            "DEGRADED",
+            "INTERRUPTED"
+          ]
+        },
+        "maximum_observed_gap_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duplicate_execution_detected": {
+          "type": "boolean"
+        },
+        "rollback_ready": {
+          "type": "boolean"
+        },
+        "continuity_evidence_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status",
+        "previous_handoff_ref",
+        "checksum"
+      ],
+      "properties": {
+        "recorded_by": {
+          "$ref": "#/$defs/id"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "previous_handoff_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
