@@ -428,11 +428,7 @@
     }
   },
   "unevaluatedProperties": false
-}
-          }
-        }
-      ]
-    },
+  },
     "wing_assignment": {
       "type": "object",
       "additionalProperties": false,
