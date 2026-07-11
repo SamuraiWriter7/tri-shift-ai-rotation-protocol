@@ -1,0 +1,77 @@
+schema_version: "0.1.0"
+record_type: shift_state_record
+
+record_id: ssr-20260712-0001
+rotation_cycle_id: tri-cycle-20260712-a
+system_id: kazene-distributed-ai-grid
+
+shift_unit:
+  unit_id: wing-group-a
+  unit_type: MULTI_WING_GROUP
+  display_name: Wind Shift Group A
+  members:
+    - member_id: finder-a1
+      member_role: finder
+      model_class: lightweight-retrieval-agent
+
+    - member_id: analyst-a1
+      member_role: analyst
+      model_class: reasoning-agent
+
+    - member_id: executor-a1
+      member_role: executor
+      model_class: tool-execution-agent
+
+shift_state: ACTIVE
+previous_shift_state: SHADOW
+next_planned_shift_state: REGENERATION
+service_authority: PRIMARY
+
+state_window:
+  started_at: "2026-07-12T00:00:00Z"
+  planned_end_at: "2026-07-12T08:00:00Z"
+  actual_end_at: null
+  sequence_number: 1
+
+responsibilities:
+  primary_duties:
+    - Accept primary user requests
+    - Execute approved external actions
+    - Generate operational traces
+    - Maintain real-time service continuity
+
+  prohibited_duties:
+    - Rewrite long-term memory without audit
+    - Ignore pending handoff blockers
+    - Continue beyond the maximum shift duration without rotation approval
+
+load_snapshot:
+  compute_load_percent: 67.5
+  memory_load_percent: 58.0
+  queue_depth: 12
+  error_rate: 0.008
+  reserved_capacity_percent: 15.0
+  health_state: HEALTHY
+  observed_at: "2026-07-12T04:00:00Z"
+
+handoff:
+  incoming_from_unit_id: wing-group-c
+  outgoing_to_unit_id: wing-group-b
+  readiness: PREPARING
+  trace_checkpoint_ref: trace://tri-cycle-20260712-a/checkpoint-0042
+  blockers: []
+
+rotation_policy:
+  policy_id: standard-tri-shift-v0.1
+  trigger_mode: HYBRID
+  maximum_shift_duration_seconds: 28800
+  rotation_required: false
+  rotation_reason: null
+
+audit:
+  recorded_by: tri-shift-controller
+  immutable: true
+  validation_status: VALID
+  checksum: null
+
+created_at: "2026-07-12T04:00:05Z"
