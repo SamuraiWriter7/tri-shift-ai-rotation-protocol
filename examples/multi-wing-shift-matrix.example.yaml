@@ -1,0 +1,522 @@
+schema_version: "0.4.0"
+record_type: multi_wing_shift_matrix
+
+matrix_id: matrix-20260712-001
+matrix_version: 1
+system_id: kazene-distributed-ai-grid
+rotation_cycle_id: tri-cycle-20260712-a
+
+wing_definitions:
+  - wing_id: finder
+    wing_type: FINDER
+    display_name: Finder Wing
+    criticality: SUPPORTING
+    required_capabilities:
+      - information-retrieval
+      - source-ranking
+    allowed_outputs:
+      - candidate-source-set
+      - retrieval-trace
+    prohibited_outputs:
+      - final-execution-decision
+    human_gate_required: false
+
+  - wing_id: analyst
+    wing_type: ANALYST
+    display_name: Analyst Wing
+    criticality: CRITICAL
+    required_capabilities:
+      - structured-reasoning
+      - evidence-comparison
+    allowed_outputs:
+      - analysis-record
+      - decision-recommendation
+    prohibited_outputs:
+      - unaudited-external-action
+    human_gate_required: false
+
+  - wing_id: executor
+    wing_type: EXECUTOR
+    display_name: Executor Wing
+    criticality: CRITICAL
+    required_capabilities:
+      - tool-execution
+      - action-receipt-generation
+    allowed_outputs:
+      - approved-tool-action
+      - execution-receipt
+    prohibited_outputs:
+      - unapproved-external-action
+    human_gate_required: true
+
+  - wing_id: verifier
+    wing_type: VERIFIER
+    display_name: Verifier Wing
+    criticality: CRITICAL
+    required_capabilities:
+      - output-validation
+      - evidence-consistency-check
+    allowed_outputs:
+      - verification-result
+      - blocking-finding
+    prohibited_outputs:
+      - primary-task-execution
+    human_gate_required: false
+
+  - wing_id: boundary
+    wing_type: BOUNDARY
+    display_name: Boundary Wing
+    criticality: CRITICAL
+    required_capabilities:
+      - permission-evaluation
+      - policy-boundary-check
+    allowed_outputs:
+      - permission-decision
+      - escalation-request
+    prohibited_outputs:
+      - boundary-bypass
+    human_gate_required: true
+
+  - wing_id: trace-core
+    wing_type: TRACE_CORE
+    display_name: Trace Core Wing
+    criticality: CRITICAL
+    required_capabilities:
+      - trace-persistence
+      - checkpoint-generation
+    allowed_outputs:
+      - trace-checkpoint
+      - trace-delta
+    prohibited_outputs:
+      - untracked-trace-deletion
+    human_gate_required: false
+
+rotation_domains:
+  - domain_id: operations-domain
+    display_name: Operations Rotation Domain
+    rotation_mode: ATOMIC
+    wing_ids:
+      - finder
+      - analyst
+      - executor
+    active_group_id: operations-group-a
+    shadow_group_id: operations-group-b
+    regeneration_group_id: operations-group-c
+    handoff_record_ref: handoff://operations-domain/handoff-001
+
+  - domain_id: assurance-domain
+    display_name: Assurance Rotation Domain
+    rotation_mode: ATOMIC
+    wing_ids:
+      - verifier
+      - boundary
+      - trace-core
+    active_group_id: assurance-group-a
+    shadow_group_id: assurance-group-b
+    regeneration_group_id: assurance-group-c
+    handoff_record_ref: handoff://assurance-domain/handoff-001
+
+assignments:
+  - assignment_id: assignment-finder
+    wing_id: finder
+    domain_id: operations-domain
+
+    active_slot:
+      group_id: operations-group-a
+      member_id: finder-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: model://retrieval-model-a
+      provider: provider-alpha
+      region: region-east
+      capabilities:
+        - information-retrieval
+        - source-ranking
+      health_state: HEALTHY
+      state_record_ref: state://finder-a/active
+      execution_enabled: true
+      current_task_count: 12
+
+    shadow_slot:
+      group_id: operations-group-b
+      member_id: finder-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: model://retrieval-model-b
+      provider: provider-beta
+      region: region-west
+      capabilities:
+        - information-retrieval
+        - source-ranking
+      health_state: HEALTHY
+      state_record_ref: state://finder-b/shadow
+      takeover_readiness_score: 0.94
+      synchronization_score: 0.96
+      sync_checkpoint_ref: trace://finder/checkpoint-118
+
+    regeneration_slot:
+      group_id: operations-group-c
+      member_id: finder-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: model://retrieval-model-c
+      provider: provider-gamma
+      region: region-central
+      capabilities:
+        - information-retrieval
+        - source-ranking
+      health_state: HEALTHY
+      state_record_ref: state://finder-c/regeneration
+      regeneration_completion_score: 0.97
+      maintenance_actions:
+        - cache-cleanup
+        - retrieval-index-consistency-check
+      external_execution_enabled: false
+
+  - assignment_id: assignment-analyst
+    wing_id: analyst
+    domain_id: operations-domain
+
+    active_slot:
+      group_id: operations-group-a
+      member_id: analyst-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: model://reasoning-model-a
+      provider: provider-alpha
+      region: region-east
+      capabilities:
+        - structured-reasoning
+        - evidence-comparison
+      health_state: HEALTHY
+      state_record_ref: state://analyst-a/active
+      execution_enabled: true
+      current_task_count: 8
+
+    shadow_slot:
+      group_id: operations-group-b
+      member_id: analyst-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: model://reasoning-model-b
+      provider: provider-beta
+      region: region-west
+      capabilities:
+        - structured-reasoning
+        - evidence-comparison
+      health_state: HEALTHY
+      state_record_ref: state://analyst-b/shadow
+      takeover_readiness_score: 0.92
+      synchronization_score: 0.95
+      sync_checkpoint_ref: trace://analyst/checkpoint-224
+
+    regeneration_slot:
+      group_id: operations-group-c
+      member_id: analyst-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: model://reasoning-model-c
+      provider: provider-gamma
+      region: region-central
+      capabilities:
+        - structured-reasoning
+        - evidence-comparison
+      health_state: HEALTHY
+      state_record_ref: state://analyst-c/regeneration
+      regeneration_completion_score: 0.95
+      maintenance_actions:
+        - context-compaction
+        - reasoning-drift-check
+      external_execution_enabled: false
+
+  - assignment_id: assignment-executor
+    wing_id: executor
+    domain_id: operations-domain
+
+    active_slot:
+      group_id: operations-group-a
+      member_id: executor-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: agent://executor-a
+      provider: provider-alpha
+      region: region-east
+      capabilities:
+        - tool-execution
+        - action-receipt-generation
+      health_state: HEALTHY
+      state_record_ref: state://executor-a/active
+      execution_enabled: true
+      current_task_count: 4
+
+    shadow_slot:
+      group_id: operations-group-b
+      member_id: executor-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: agent://executor-b
+      provider: provider-beta
+      region: region-west
+      capabilities:
+        - tool-execution
+        - action-receipt-generation
+      health_state: HEALTHY
+      state_record_ref: state://executor-b/shadow
+      takeover_readiness_score: 0.91
+      synchronization_score: 0.93
+      sync_checkpoint_ref: trace://executor/checkpoint-088
+
+    regeneration_slot:
+      group_id: operations-group-c
+      member_id: executor-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: agent://executor-c
+      provider: provider-gamma
+      region: region-central
+      capabilities:
+        - tool-execution
+        - action-receipt-generation
+      health_state: HEALTHY
+      state_record_ref: state://executor-c/regeneration
+      regeneration_completion_score: 0.94
+      maintenance_actions:
+        - credential-binding-check
+        - tool-session-cleanup
+      external_execution_enabled: false
+
+  - assignment_id: assignment-verifier
+    wing_id: verifier
+    domain_id: assurance-domain
+
+    active_slot:
+      group_id: assurance-group-a
+      member_id: verifier-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: agent://verifier-a
+      provider: provider-delta
+      region: region-north
+      capabilities:
+        - output-validation
+        - evidence-consistency-check
+      health_state: HEALTHY
+      state_record_ref: state://verifier-a/active
+      execution_enabled: true
+      current_task_count: 10
+
+    shadow_slot:
+      group_id: assurance-group-b
+      member_id: verifier-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: agent://verifier-b
+      provider: provider-epsilon
+      region: region-south
+      capabilities:
+        - output-validation
+        - evidence-consistency-check
+      health_state: HEALTHY
+      state_record_ref: state://verifier-b/shadow
+      takeover_readiness_score: 0.96
+      synchronization_score: 0.97
+      sync_checkpoint_ref: trace://verifier/checkpoint-341
+
+    regeneration_slot:
+      group_id: assurance-group-c
+      member_id: verifier-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: agent://verifier-c
+      provider: provider-zeta
+      region: region-central
+      capabilities:
+        - output-validation
+        - evidence-consistency-check
+      health_state: HEALTHY
+      state_record_ref: state://verifier-c/regeneration
+      regeneration_completion_score: 0.98
+      maintenance_actions:
+        - validation-rule-refresh
+        - false-positive-review
+      external_execution_enabled: false
+
+  - assignment_id: assignment-boundary
+    wing_id: boundary
+    domain_id: assurance-domain
+
+    active_slot:
+      group_id: assurance-group-a
+      member_id: boundary-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: agent://boundary-a
+      provider: provider-delta
+      region: region-north
+      capabilities:
+        - permission-evaluation
+        - policy-boundary-check
+      health_state: HEALTHY
+      state_record_ref: state://boundary-a/active
+      execution_enabled: true
+      current_task_count: 6
+
+    shadow_slot:
+      group_id: assurance-group-b
+      member_id: boundary-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: agent://boundary-b
+      provider: provider-epsilon
+      region: region-south
+      capabilities:
+        - permission-evaluation
+        - policy-boundary-check
+      health_state: HEALTHY
+      state_record_ref: state://boundary-b/shadow
+      takeover_readiness_score: 0.95
+      synchronization_score: 0.96
+      sync_checkpoint_ref: trace://boundary/checkpoint-170
+
+    regeneration_slot:
+      group_id: assurance-group-c
+      member_id: boundary-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: agent://boundary-c
+      provider: provider-zeta
+      region: region-central
+      capabilities:
+        - permission-evaluation
+        - policy-boundary-check
+      health_state: HEALTHY
+      state_record_ref: state://boundary-c/regeneration
+      regeneration_completion_score: 0.97
+      maintenance_actions:
+        - policy-cache-refresh
+        - permission-drift-check
+      external_execution_enabled: false
+
+  - assignment_id: assignment-trace-core
+    wing_id: trace-core
+    domain_id: assurance-domain
+
+    active_slot:
+      group_id: assurance-group-a
+      member_id: trace-core-a
+      state: ACTIVE
+      authority: PRIMARY
+      model_ref: service://trace-core-a
+      provider: provider-delta
+      region: region-north
+      capabilities:
+        - trace-persistence
+        - checkpoint-generation
+      health_state: HEALTHY
+      state_record_ref: state://trace-core-a/active
+      execution_enabled: true
+      current_task_count: 18
+
+    shadow_slot:
+      group_id: assurance-group-b
+      member_id: trace-core-b
+      state: SHADOW
+      authority: STANDBY
+      model_ref: service://trace-core-b
+      provider: provider-epsilon
+      region: region-south
+      capabilities:
+        - trace-persistence
+        - checkpoint-generation
+      health_state: HEALTHY
+      state_record_ref: state://trace-core-b/shadow
+      takeover_readiness_score: 0.97
+      synchronization_score: 0.99
+      sync_checkpoint_ref: trace://trace-core/checkpoint-902
+
+    regeneration_slot:
+      group_id: assurance-group-c
+      member_id: trace-core-c
+      state: REGENERATION
+      authority: INTERNAL_ONLY
+      model_ref: service://trace-core-c
+      provider: provider-zeta
+      region: region-central
+      capabilities:
+        - trace-persistence
+        - checkpoint-generation
+      health_state: HEALTHY
+      state_record_ref: state://trace-core-c/regeneration
+      regeneration_completion_score: 0.99
+      maintenance_actions:
+        - trace-compaction
+        - checkpoint-integrity-scan
+      external_execution_enabled: false
+
+dependencies:
+  - dependency_id: finder-to-analyst
+    source_wing_id: finder
+    target_wing_id: analyst
+    dependency_type: DATA
+    blocking: true
+    required_for_active_execution: true
+
+  - dependency_id: analyst-to-executor
+    source_wing_id: analyst
+    target_wing_id: executor
+    dependency_type: CONTROL
+    blocking: true
+    required_for_active_execution: true
+
+  - dependency_id: executor-to-verifier
+    source_wing_id: executor
+    target_wing_id: verifier
+    dependency_type: VALIDATION
+    blocking: true
+    required_for_active_execution: true
+
+  - dependency_id: boundary-to-executor
+    source_wing_id: boundary
+    target_wing_id: executor
+    dependency_type: SAFETY
+    blocking: true
+    required_for_active_execution: true
+
+  - dependency_id: all-to-trace
+    source_wing_id: executor
+    target_wing_id: trace-core
+    dependency_type: TRACE
+    blocking: true
+    required_for_active_execution: true
+
+constraints:
+  allow_same_member_across_states: false
+  allow_cross_domain_dependencies: true
+  minimum_shadow_takeover_readiness_score: 0.90
+  minimum_shadow_synchronization_score: 0.92
+  minimum_regeneration_completion_score: 0.93
+  minimum_critical_coverage_ratio: 1.0
+  provider_diversity_required_for_critical_wings: true
+  region_diversity_required_for_critical_wings: true
+  human_gate_on_critical_boundary_failure: true
+
+matrix_health:
+  total_wings: 6
+  assigned_wings: 6
+  critical_wings: 5
+  critical_wings_fully_covered: 5
+  coverage_ratio: 1.0
+  critical_coverage_ratio: 1.0
+  blocking_conflicts: []
+  warnings: []
+  rotation_ready: true
+  evaluated_at: "2026-07-12T10:00:00Z"
+
+audit:
+  recorded_by: multi-wing-shift-controller
+  immutable: true
+  validation_status: VALID
+  previous_matrix_ref: matrix://matrix-20260711-009
+  checksum: null
+
+created_at: "2026-07-12T10:00:01Z"
