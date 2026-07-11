@@ -41,6 +41,20 @@ VALIDATION_TARGETS = [
         "example": ROOT_DIR / "examples" / "rotation-evaluation-record.example.yaml",
         "semantic_validator": "validate_rotation_evaluation_semantics",
     },
+    {
+    "name": "Multi-Wing Shift Matrix",
+    "schema": (
+        ROOT_DIR
+        / "schemas"
+        / "multi-wing-shift-matrix.schema.json"
+    ),
+    "example": (
+        ROOT_DIR
+        / "examples"
+        / "multi-wing-shift-matrix.example.yaml"
+    ),
+    "semantic_validator": "validate_multi_wing_matrix_semantics",
+},
 ]
 
 
@@ -832,6 +846,369 @@ def main() -> int:
     loaded: list[tuple[dict[str, Any], dict[str, Any]]] = []
     loaded_documents: list[dict[str, Any]] = []
     all_valid = True
+
+def validate_multi_wing_matrix_semantics(
+    document: dict[str, Any],
+    context: dict[str, Any],
+) -> None:
+    """Validate Multi-Wing Shift Matrix invariants."""
+
+    del context
+
+    wing_definitions = document["wing_definitions"]
+    rotation_domains = document["rotation_domains"]
+    assignments = document["assignments"]
+    dependencies = document["dependencies"]
+    constraints = document["constraints"]
+    matrix_health = document["matrix_health"]
+
+    wing_map = {
+        wing["wing_id"]: wing
+        for wing in wing_definitions
+    }
+
+    require(
+        len(wing_map) == len(wing_definitions),
+        "wing_definition wing_id values must be unique",
+    )
+
+    domain_map = {
+        domain["domain_id"]: domain
+        for domain in rotation_domains
+    }
+
+    require(
+        len(domain_map) == len(rotation_domains),
+        "rotation domain IDs must be unique",
+    )
+
+    assignment_ids = [
+        assignment["assignment_id"]
+        for assignment in assignments
+    ]
+
+    require(
+        len(assignment_ids) == len(set(assignment_ids)),
+        "assignment_id values must be unique",
+    )
+
+    assigned_wing_ids = [
+        assignment["wing_id"]
+        for assignment in assignments
+    ]
+
+    require(
+        len(assigned_wing_ids) == len(set(assigned_wing_ids)),
+        "each wing must have exactly one matrix assignment",
+    )
+
+    require(
+        set(assigned_wing_ids) == set(wing_map),
+        "every declared wing must have exactly one assignment",
+    )
+
+    wing_domain_map: dict[str, str] = {}
+
+    for domain in rotation_domains:
+        group_ids = {
+            domain["active_group_id"],
+            domain["shadow_group_id"],
+            domain["regeneration_group_id"],
+        }
+
+        require(
+            len(group_ids) == 3,
+            f"rotation domain {domain['domain_id']} "
+            "must use three distinct groups",
+        )
+
+        for wing_id in domain["wing_ids"]:
+            require(
+                wing_id in wing_map,
+                f"domain {domain['domain_id']} references "
+                f"unknown wing {wing_id}",
+            )
+
+            require(
+                wing_id not in wing_domain_map,
+                f"wing {wing_id} belongs to multiple rotation domains",
+            )
+
+            wing_domain_map[wing_id] = domain["domain_id"]
+
+    require(
+        set(wing_domain_map) == set(wing_map),
+        "every wing must belong to exactly one rotation domain",
+    )
+
+    assignment_map = {
+        assignment["wing_id"]: assignment
+        for assignment in assignments
+    }
+
+    for domain_id, domain in domain_map.items():
+        expected_wings = set(domain["wing_ids"])
+
+        actual_wings = {
+            assignment["wing_id"]
+            for assignment in assignments
+            if assignment["domain_id"] == domain_id
+        }
+
+        require(
+            expected_wings == actual_wings,
+            f"domain {domain_id} wing list does not match assignments",
+        )
+
+    critical_fully_covered = 0
+
+    for assignment in assignments:
+        wing_id = assignment["wing_id"]
+        domain_id = assignment["domain_id"]
+
+        require(
+            wing_id in wing_map,
+            f"assignment references unknown wing {wing_id}",
+        )
+        require(
+            domain_id in domain_map,
+            f"assignment references unknown domain {domain_id}",
+        )
+        require(
+            wing_domain_map[wing_id] == domain_id,
+            f"wing {wing_id} is assigned to the wrong domain",
+        )
+
+        wing = wing_map[wing_id]
+        domain = domain_map[domain_id]
+
+        active = assignment["active_slot"]
+        shadow = assignment["shadow_slot"]
+        regeneration = assignment["regeneration_slot"]
+
+        require(
+            active["group_id"] == domain["active_group_id"],
+            f"{wing_id} active slot has the wrong group_id",
+        )
+        require(
+            shadow["group_id"] == domain["shadow_group_id"],
+            f"{wing_id} shadow slot has the wrong group_id",
+        )
+        require(
+            regeneration["group_id"]
+            == domain["regeneration_group_id"],
+            f"{wing_id} regeneration slot has the wrong group_id",
+        )
+
+        member_ids = {
+            active["member_id"],
+            shadow["member_id"],
+            regeneration["member_id"],
+        }
+
+        if not constraints["allow_same_member_across_states"]:
+            require(
+                len(member_ids) == 3,
+                f"{wing_id} must use distinct members "
+                "across all three shift states",
+            )
+
+        required_capabilities = set(
+            wing["required_capabilities"]
+        )
+
+        for slot_name, slot in [
+            ("active", active),
+            ("shadow", shadow),
+            ("regeneration", regeneration),
+        ]:
+            slot_capabilities = set(slot["capabilities"])
+
+            require(
+                required_capabilities.issubset(
+                    slot_capabilities
+                ),
+                f"{wing_id} {slot_name} slot is missing "
+                "required capabilities",
+            )
+
+        require(
+            shadow["takeover_readiness_score"]
+            >= constraints[
+                "minimum_shadow_takeover_readiness_score"
+            ],
+            f"{wing_id} shadow takeover readiness is too low",
+        )
+
+        require(
+            shadow["synchronization_score"]
+            >= constraints[
+                "minimum_shadow_synchronization_score"
+            ],
+            f"{wing_id} shadow synchronization is too low",
+        )
+
+        require(
+            regeneration["regeneration_completion_score"]
+            >= constraints[
+                "minimum_regeneration_completion_score"
+            ],
+            f"{wing_id} regeneration completion is too low",
+        )
+
+        if wing["criticality"] == "CRITICAL":
+            if constraints[
+                "provider_diversity_required_for_critical_wings"
+            ]:
+                providers = {
+                    active["provider"],
+                    shadow["provider"],
+                    regeneration["provider"],
+                }
+
+                require(
+                    None not in providers and len(providers) == 3,
+                    f"critical wing {wing_id} must use "
+                    "three distinct providers",
+                )
+
+            if constraints[
+                "region_diversity_required_for_critical_wings"
+            ]:
+                regions = {
+                    active["region"],
+                    shadow["region"],
+                    regeneration["region"],
+                }
+
+                require(
+                    None not in regions and len(regions) == 3,
+                    f"critical wing {wing_id} must use "
+                    "three distinct regions",
+                )
+
+            fully_covered = all(
+                slot["health_state"] != "BLOCKED"
+                for slot in [
+                    active,
+                    shadow,
+                    regeneration,
+                ]
+            )
+
+            if fully_covered:
+                critical_fully_covered += 1
+
+    dependency_ids = [
+        dependency["dependency_id"]
+        for dependency in dependencies
+    ]
+
+    require(
+        len(dependency_ids) == len(set(dependency_ids)),
+        "dependency_id values must be unique",
+    )
+
+    for dependency in dependencies:
+        source = dependency["source_wing_id"]
+        target = dependency["target_wing_id"]
+
+        require(
+            source in wing_map,
+            f"dependency references unknown source wing {source}",
+        )
+        require(
+            target in wing_map,
+            f"dependency references unknown target wing {target}",
+        )
+        require(
+            source != target,
+            f"dependency {dependency['dependency_id']} "
+            "cannot reference the same wing twice",
+        )
+
+        source_domain = wing_domain_map[source]
+        target_domain = wing_domain_map[target]
+
+        if not constraints["allow_cross_domain_dependencies"]:
+            require(
+                source_domain == target_domain,
+                f"cross-domain dependency "
+                f"{dependency['dependency_id']} is not allowed",
+            )
+
+    total_wings = len(wing_definitions)
+    assigned_wings = len(assignments)
+
+    critical_wings = sum(
+        1
+        for wing in wing_definitions
+        if wing["criticality"] == "CRITICAL"
+    )
+
+    coverage_ratio = (
+        assigned_wings / total_wings
+        if total_wings
+        else 0.0
+    )
+
+    critical_coverage_ratio = (
+        critical_fully_covered / critical_wings
+        if critical_wings
+        else 1.0
+    )
+
+    require(
+        matrix_health["total_wings"] == total_wings,
+        "matrix_health.total_wings is incorrect",
+    )
+    require(
+        matrix_health["assigned_wings"] == assigned_wings,
+        "matrix_health.assigned_wings is incorrect",
+    )
+    require(
+        matrix_health["critical_wings"] == critical_wings,
+        "matrix_health.critical_wings is incorrect",
+    )
+    require(
+        matrix_health["critical_wings_fully_covered"]
+        == critical_fully_covered,
+        "critical_wings_fully_covered is incorrect",
+    )
+    require(
+        approximately_equal(
+            matrix_health["coverage_ratio"],
+            coverage_ratio,
+        ),
+        "matrix_health.coverage_ratio is incorrect",
+    )
+    require(
+        approximately_equal(
+            matrix_health["critical_coverage_ratio"],
+            critical_coverage_ratio,
+        ),
+        "matrix_health.critical_coverage_ratio is incorrect",
+    )
+
+    all_active_healthy = all(
+        assignment["active_slot"]["health_state"]
+        != "BLOCKED"
+        for assignment in assignments
+    )
+
+    expected_rotation_ready = (
+        not matrix_health["blocking_conflicts"]
+        and all_active_healthy
+        and coverage_ratio == 1.0
+        and critical_coverage_ratio
+        >= constraints["minimum_critical_coverage_ratio"]
+    )
+
+    require(
+        matrix_health["rotation_ready"]
+        == expected_rotation_ready,
+        "matrix_health.rotation_ready is inconsistent",
+    )
 
     try:
         for target in VALIDATION_TARGETS:
