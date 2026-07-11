@@ -1,0 +1,673 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kazene.org/schemas/multi-wing-shift-matrix.schema.json",
+  "title": "Multi-Wing Shift Matrix",
+  "description": "Defines the allocation of Multi-Wing AI roles across active, shadow, and regeneration shifts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "matrix_id",
+    "matrix_version",
+    "system_id",
+    "rotation_cycle_id",
+    "wing_definitions",
+    "rotation_domains",
+    "assignments",
+    "dependencies",
+    "constraints",
+    "matrix_health",
+    "audit",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.4.0"
+    },
+    "record_type": {
+      "type": "string",
+      "const": "multi_wing_shift_matrix"
+    },
+    "matrix_id": {
+      "$ref": "#/$defs/id"
+    },
+    "matrix_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "system_id": {
+      "$ref": "#/$defs/id"
+    },
+    "rotation_cycle_id": {
+      "$ref": "#/$defs/id"
+    },
+    "wing_definitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/wing_definition"
+      }
+    },
+    "rotation_domains": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/rotation_domain"
+      }
+    },
+    "assignments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/wing_assignment"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/wing_dependency"
+      }
+    },
+    "constraints": {
+      "$ref": "#/$defs/matrix_constraints"
+    },
+    "matrix_health": {
+      "$ref": "#/$defs/matrix_health"
+    },
+    "audit": {
+      "$ref": "#/$defs/audit"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "wing_state": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "SHADOW",
+        "REGENERATION"
+      ]
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "PRIMARY",
+        "STANDBY",
+        "INTERNAL_ONLY"
+      ]
+    },
+    "health_state": {
+      "type": "string",
+      "enum": [
+        "HEALTHY",
+        "DEGRADED",
+        "BLOCKED"
+      ]
+    },
+    "wing_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wing_id",
+        "wing_type",
+        "display_name",
+        "criticality",
+        "required_capabilities",
+        "allowed_outputs",
+        "prohibited_outputs",
+        "human_gate_required"
+      ],
+      "properties": {
+        "wing_id": {
+          "$ref": "#/$defs/id"
+        },
+        "wing_type": {
+          "type": "string",
+          "enum": [
+            "FINDER",
+            "ANALYST",
+            "PLANNER",
+            "EXECUTOR",
+            "VERIFIER",
+            "BOUNDARY",
+            "BRIDGE",
+            "ROUTER",
+            "TRACE_CORE",
+            "MEMORY",
+            "REPAIR",
+            "AUDITOR",
+            "CUSTOM"
+          ]
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "OPTIONAL",
+            "SUPPORTING",
+            "CRITICAL"
+          ]
+        },
+        "required_capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "allowed_outputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "prohibited_outputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "human_gate_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rotation_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain_id",
+        "display_name",
+        "rotation_mode",
+        "wing_ids",
+        "active_group_id",
+        "shadow_group_id",
+        "regeneration_group_id",
+        "handoff_record_ref"
+      ],
+      "properties": {
+        "domain_id": {
+          "$ref": "#/$defs/id"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "rotation_mode": {
+          "type": "string",
+          "enum": [
+            "ATOMIC",
+            "STAGED"
+          ]
+        },
+        "wing_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "active_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "shadow_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "regeneration_group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "handoff_record_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "base_slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group_id",
+        "member_id",
+        "state",
+        "authority",
+        "model_ref",
+        "provider",
+        "region",
+        "capabilities",
+        "health_state",
+        "state_record_ref"
+      ],
+      "properties": {
+        "group_id": {
+          "$ref": "#/$defs/id"
+        },
+        "member_id": {
+          "$ref": "#/$defs/id"
+        },
+        "state": {
+          "$ref": "#/$defs/wing_state"
+        },
+        "authority": {
+          "$ref": "#/$defs/authority"
+        },
+        "model_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "region": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "health_state": {
+          "$ref": "#/$defs/health_state"
+        },
+        "state_record_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        }
+      }
+    },
+    "active_slot": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base_slot"
+        },
+        {
+          "type": "object",
+          "required": [
+            "execution_enabled",
+            "current_task_count"
+          ],
+          "properties": {
+            "state": {
+              "const": "ACTIVE"
+            },
+            "authority": {
+              "const": "PRIMARY"
+            },
+            "execution_enabled": {
+              "type": "boolean",
+              "const": true
+            },
+            "current_task_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "shadow_slot": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base_slot"
+        },
+        {
+          "type": "object",
+          "required": [
+            "takeover_readiness_score",
+            "synchronization_score",
+            "sync_checkpoint_ref"
+          ],
+          "properties": {
+            "state": {
+              "const": "SHADOW"
+            },
+            "authority": {
+              "const": "STANDBY"
+            },
+            "takeover_readiness_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "synchronization_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "sync_checkpoint_ref": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 512
+            }
+          }
+        }
+      ]
+    },
+    "regeneration_slot": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/base_slot"
+        },
+        {
+          "type": "object",
+          "required": [
+            "regeneration_completion_score",
+            "maintenance_actions",
+            "external_execution_enabled"
+          ],
+          "properties": {
+            "state": {
+              "const": "REGENERATION"
+            },
+            "authority": {
+              "const": "INTERNAL_ONLY"
+            },
+            "regeneration_completion_score": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "maintenance_actions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "external_execution_enabled": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        }
+      ]
+    },
+    "wing_assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assignment_id",
+        "wing_id",
+        "domain_id",
+        "active_slot",
+        "shadow_slot",
+        "regeneration_slot"
+      ],
+      "properties": {
+        "assignment_id": {
+          "$ref": "#/$defs/id"
+        },
+        "wing_id": {
+          "$ref": "#/$defs/id"
+        },
+        "domain_id": {
+          "$ref": "#/$defs/id"
+        },
+        "active_slot": {
+          "$ref": "#/$defs/active_slot"
+        },
+        "shadow_slot": {
+          "$ref": "#/$defs/shadow_slot"
+        },
+        "regeneration_slot": {
+          "$ref": "#/$defs/regeneration_slot"
+        }
+      }
+    },
+    "wing_dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dependency_id",
+        "source_wing_id",
+        "target_wing_id",
+        "dependency_type",
+        "blocking",
+        "required_for_active_execution"
+      ],
+      "properties": {
+        "dependency_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_wing_id": {
+          "$ref": "#/$defs/id"
+        },
+        "target_wing_id": {
+          "$ref": "#/$defs/id"
+        },
+        "dependency_type": {
+          "type": "string",
+          "enum": [
+            "DATA",
+            "CONTROL",
+            "VALIDATION",
+            "SAFETY",
+            "TRACE",
+            "MEMORY",
+            "ROUTING",
+            "OTHER"
+          ]
+        },
+        "blocking": {
+          "type": "boolean"
+        },
+        "required_for_active_execution": {
+          "type": "boolean"
+        }
+      }
+    },
+    "matrix_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allow_same_member_across_states",
+        "allow_cross_domain_dependencies",
+        "minimum_shadow_takeover_readiness_score",
+        "minimum_shadow_synchronization_score",
+        "minimum_regeneration_completion_score",
+        "minimum_critical_coverage_ratio",
+        "provider_diversity_required_for_critical_wings",
+        "region_diversity_required_for_critical_wings",
+        "human_gate_on_critical_boundary_failure"
+      ],
+      "properties": {
+        "allow_same_member_across_states": {
+          "type": "boolean"
+        },
+        "allow_cross_domain_dependencies": {
+          "type": "boolean"
+        },
+        "minimum_shadow_takeover_readiness_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimum_shadow_synchronization_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimum_regeneration_completion_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimum_critical_coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "provider_diversity_required_for_critical_wings": {
+          "type": "boolean"
+        },
+        "region_diversity_required_for_critical_wings": {
+          "type": "boolean"
+        },
+        "human_gate_on_critical_boundary_failure": {
+          "type": "boolean"
+        }
+      }
+    },
+    "matrix_health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_wings",
+        "assigned_wings",
+        "critical_wings",
+        "critical_wings_fully_covered",
+        "coverage_ratio",
+        "critical_coverage_ratio",
+        "blocking_conflicts",
+        "warnings",
+        "rotation_ready",
+        "evaluated_at"
+      ],
+      "properties": {
+        "total_wings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "assigned_wings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "critical_wings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "critical_wings_fully_covered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "critical_coverage_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "blocking_conflicts": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "rotation_ready": {
+          "type": "boolean"
+        },
+        "evaluated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_by",
+        "immutable",
+        "validation_status",
+        "previous_matrix_ref",
+        "checksum"
+      ],
+      "properties": {
+        "recorded_by": {
+          "$ref": "#/$defs/id"
+        },
+        "immutable": {
+          "type": "boolean"
+        },
+        "validation_status": {
+          "type": "string",
+          "enum": [
+            "PENDING",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "previous_matrix_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 512
+        },
+        "checksum": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}
