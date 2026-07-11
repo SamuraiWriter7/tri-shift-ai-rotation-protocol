@@ -1,0 +1,161 @@
+schema_version: "0.3.0"
+record_type: rotation_evaluation_record
+
+evaluation_id: rotation-eval-20260712-0800
+policy_id: adaptive-tri-shift-v0.3
+system_id: kazene-distributed-ai-grid
+rotation_cycle_id: tri-cycle-20260712-a
+
+active_unit:
+  unit_id: wing-group-a
+  current_state: ACTIVE
+  current_authority: PRIMARY
+  active_duration_seconds: 28800
+  consecutive_active_shifts: 2
+  active_share_in_window: 0.44
+  state_record_ref: state://wing-group-a/ssr-20260712-0001
+
+candidate_units:
+  assuming_candidate:
+    unit_id: wing-group-b
+    current_state: SHADOW
+    target_state: ACTIVE
+    readiness_score: 0.93
+    blocking_reasons: []
+    state_record_ref: state://wing-group-b/ssr-20260712-0002
+
+  continuity_candidate:
+    unit_id: wing-group-c
+    current_state: REGENERATION
+    target_state: SHADOW
+    readiness_score: 0.96
+    blocking_reasons: []
+    state_record_ref: state://wing-group-c/ssr-20260712-0003
+
+evaluation_window:
+  started_at: "2026-07-12T07:55:00Z"
+  ended_at: "2026-07-12T08:00:00Z"
+  sample_count: 5
+
+signal_observations:
+  - signal_id: compute_pressure
+    raw_value: 78
+    normalized_value: 0.78
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.20
+    warning_threshold_used: 70
+    critical_threshold_used: 90
+    threshold_state: WARNING
+    contribution: 0.156
+
+  - signal_id: memory_pressure
+    raw_value: 66
+    normalized_value: 0.66
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.15
+    warning_threshold_used: 75
+    critical_threshold_used: 90
+    threshold_state: NORMAL
+    contribution: 0.099
+
+  - signal_id: queue_pressure
+    raw_value: 72
+    normalized_value: 0.72
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.15
+    warning_threshold_used: 50
+    critical_threshold_used: 100
+    threshold_state: WARNING
+    contribution: 0.108
+
+  - signal_id: error_pressure
+    raw_value: 0.008
+    normalized_value: 0.35
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.10
+    warning_threshold_used: 0.02
+    critical_threshold_used: 0.05
+    threshold_state: NORMAL
+    contribution: 0.035
+
+  - signal_id: trace_accumulation
+    raw_value: 16400
+    normalized_value: 0.82
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.15
+    warning_threshold_used: 10000
+    critical_threshold_used: 20000
+    threshold_state: WARNING
+    contribution: 0.123
+
+  - signal_id: context_staleness
+    raw_value: 2400
+    normalized_value: 0.60
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.10
+    warning_threshold_used: 1800
+    critical_threshold_used: 3600
+    threshold_state: WARNING
+    contribution: 0.060
+
+  - signal_id: fairness_debt
+    raw_value: 0.90
+    normalized_value: 0.90
+    direction: HIGHER_IS_WORSE
+    weight_used: 0.15
+    warning_threshold_used: 0.60
+    critical_threshold_used: 0.90
+    threshold_state: CRITICAL
+    contribution: 0.135
+
+score:
+  method: WEIGHTED_SUM
+  total_score: 0.716
+  warning_score: 0.55
+  rotation_score: 0.70
+  consecutive_threshold_breaches: 2
+  required_consecutive_breaches: 2
+  hard_triggered: false
+  hard_trigger_ids: []
+
+guard_evaluation:
+  minimum_active_duration_seconds: 3600
+  maximum_active_duration_seconds: 28800
+  active_duration_satisfied: true
+  maximum_duration_reached: true
+
+  minimum_shadow_readiness_score: 0.85
+  shadow_readiness_satisfied: true
+
+  minimum_regeneration_completion_score: 0.90
+  regeneration_completion_satisfied: true
+
+  cooldown_seconds: 300
+  cooldown_elapsed_seconds: 300
+  cooldown_satisfied: true
+
+  handoff_blockers: []
+  emergency_override: false
+  all_required_guards_passed: true
+
+decision:
+  action: ROTATE_NOW
+  reason_codes:
+    - COMPOSITE_SCORE_THRESHOLD_REACHED
+    - MAXIMUM_ACTIVE_DURATION_REACHED
+    - FAIRNESS_PRESSURE
+    - SUCCESSOR_READY
+  selected_assuming_unit_id: wing-group-b
+  selected_continuity_unit_id: wing-group-c
+  planned_handoff_id: handoff-tri-cycle-20260712-a-01
+  execute_not_before: "2026-07-12T08:00:00Z"
+  decision_authority: tri-shift-controller
+
+audit:
+  recorded_by: adaptive-rotation-evaluator
+  immutable: true
+  validation_status: VALID
+  previous_evaluation_ref: evaluation://rotation-eval-20260712-0759
+  checksum: null
+
+created_at: "2026-07-12T08:00:00.050Z"
