@@ -1,0 +1,124 @@
+schema_version: "0.3.0"
+record_type: adaptive_rotation_policy
+
+policy_id: adaptive-tri-shift-v0.3
+system_id: kazene-distributed-ai-grid
+rotation_mode: HYBRID
+
+evaluation_cadence:
+  interval_seconds: 60
+  minimum_samples: 5
+  rolling_window_seconds: 300
+
+signals:
+  - signal_id: compute_pressure
+    source_metric: active_unit.compute_load_percent
+    unit: percent
+    direction: HIGHER_IS_WORSE
+    weight: 0.20
+    warning_threshold: 70
+    critical_threshold: 90
+    required: true
+
+  - signal_id: memory_pressure
+    source_metric: active_unit.memory_load_percent
+    unit: percent
+    direction: HIGHER_IS_WORSE
+    weight: 0.15
+    warning_threshold: 75
+    critical_threshold: 90
+    required: true
+
+  - signal_id: queue_pressure
+    source_metric: active_unit.queue_depth
+    unit: tasks
+    direction: HIGHER_IS_WORSE
+    weight: 0.15
+    warning_threshold: 50
+    critical_threshold: 100
+    required: true
+
+  - signal_id: error_pressure
+    source_metric: active_unit.error_rate
+    unit: ratio
+    direction: HIGHER_IS_WORSE
+    weight: 0.10
+    warning_threshold: 0.02
+    critical_threshold: 0.05
+    required: true
+
+  - signal_id: trace_accumulation
+    source_metric: active_unit.unconsolidated_trace_count
+    unit: traces
+    direction: HIGHER_IS_WORSE
+    weight: 0.15
+    warning_threshold: 10000
+    critical_threshold: 20000
+    required: true
+
+  - signal_id: context_staleness
+    source_metric: active_unit.oldest_unresolved_context_age_seconds
+    unit: seconds
+    direction: HIGHER_IS_WORSE
+    weight: 0.10
+    warning_threshold: 1800
+    critical_threshold: 3600
+    required: true
+
+  - signal_id: fairness_debt
+    source_metric: active_unit.rotation_fairness_debt
+    unit: ratio
+    direction: HIGHER_IS_WORSE
+    weight: 0.15
+    warning_threshold: 0.60
+    critical_threshold: 0.90
+    required: true
+
+scoring:
+  method: WEIGHTED_SUM
+  warning_score: 0.55
+  rotation_score: 0.70
+  required_consecutive_breaches: 2
+
+hard_triggers:
+  - trigger_id: excessive-error-rate
+    signal_id: error_pressure
+    operator: GTE
+    threshold: 0.10
+    action: EMERGENCY_REASSIGN
+
+  - trigger_id: compute-saturation
+    signal_id: compute_pressure
+    operator: GTE
+    threshold: 98
+    action: ROTATE_NOW
+
+guards:
+  minimum_active_duration_seconds: 3600
+  maximum_active_duration_seconds: 28800
+  minimum_shadow_readiness_score: 0.85
+  minimum_regeneration_completion_score: 0.90
+  cooldown_seconds: 300
+  handoff_required: true
+  allow_rotation_with_blockers: false
+
+fairness:
+  enabled: true
+  maximum_consecutive_active_shifts: 2
+  rolling_shift_window: 9
+  maximum_active_share: 0.45
+  force_rotation_debt_threshold: 0.95
+
+fallback:
+  on_missing_required_signal: HOLD_AND_ESCALATE
+  on_no_ready_shadow_unit: EXTEND_WITH_GUARD
+  on_no_regenerated_unit: HOLD_AND_ESCALATE
+  on_evaluation_failure: ENTER_DEGRADED_MODE
+
+audit:
+  recorded_by: tri-shift-policy-controller
+  immutable: true
+  validation_status: VALID
+  checksum: null
+
+created_at: "2026-07-12T09:00:00Z"
